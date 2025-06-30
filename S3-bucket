@@ -1,48 +1,60 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Test bucket using Cloud Formation
+Description: Best-practice S3 bucket creation using CloudFormation
 
 Parameters:
   BucketName:
     Type: String
-    Default: jhooq-test-bucket-with-cf
+    Description: Name of the main S3 bucket
+    Default: my-best-practice-bucket
 
   AccessLogBucket:
     Type: String
-    Default: my-demo-test-logging-4bb1ed77242437c9
+    Description: S3 bucket name for storing logs
+    Default: my-log-bucket-123456
 
   KmsKeyArn:
     Type: String
-    Default: arn:aws:kms:eu-north-1:242396018804:key/a68e0903-c395-4e21-b247-6dd709215ded
+    Description: KMS Key ARN for encryption
+    Default: arn:aws:kms:eu-central-1:111122223333:key/abc12345-d678-90ab-cdef-EXAMPLEKEY
 
 Resources:
-  MainBucket:
+  SecureS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Ref BucketName
-
-      ## Setup encryption - KMS Key
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: aws:kms
               KMSMasterKeyID: !Ref KmsKeyArn
-
-      ## Enable versioning
       VersioningConfiguration:
         Status: Enabled
-
-      ## Block public access
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
-
-      ## Setup Log bucket
       LoggingConfiguration:
         DestinationBucketName: !Ref AccessLogBucket
+        LogFilePrefix: logs/
+
+  # Optional: Secure Bucket Policy (Allow only specific IAM user/role)
+  # SecureBucketPolicy:
+  #   Type: AWS::S3::BucketPolicy
+  #   Properties:
+  #     Bucket: !Ref SecureS3Bucket
+  #     PolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             AWS: arn:aws:iam::111122223333:user/MyUserOrRole
+  #           Action: "s3:*"
+  #           Resource:
+  #             - !Sub arn:aws:s3:::${BucketName}
+  #             - !Sub arn:aws:s3:::${BucketName}/*
 
 Outputs:
-  MainBucketName:
-    Description: Name of the main bucket
-    Value: !Ref MainBucket
+  S3BucketName:
+    Description: Name of the secure S3 bucket
+    Value: !Ref SecureS3Bucket
